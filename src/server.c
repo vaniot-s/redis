@@ -2625,21 +2625,27 @@ void createSharedObjects(void) {
     shared.maxstring = sdsnew("maxstring");
 }
 
+// 初始化服务器结构状态
 void initServerConfig(void) {
     int j;
 
     updateCachedTime(1);
+    //　设置服务器的运行id
     getRandomHexChars(server.runid,CONFIG_RUN_ID_SIZE);
+    // 为运行ID加上结尾字符
     server.runid[CONFIG_RUN_ID_SIZE] = '\0';
     changeReplicationId();
     clearReplicationId2();
+    //　设置服务器默认频率
     server.hz = CONFIG_DEFAULT_HZ; /* Initialize it ASAP, even if it may get
                                       updated later after loading the config.
                                       This value may be used before the server
                                       is initialized. */
     server.timezone = getTimeZone(); /* Initialized by tzset(). */
+    // 设置默认配置文件路径
     server.configfile = NULL;
     server.executable = NULL;
+    // 设置服务器的运行架构
     server.arch_bits = (sizeof(long) == 8) ? 64 : 32;
     server.bindaddr_count = 0;
     server.unixsocketperm = CONFIG_DEFAULT_UNIX_SOCKET_PERM;
