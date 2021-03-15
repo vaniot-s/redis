@@ -217,21 +217,30 @@ typedef struct clusterState {
 /* Initially we don't know our "name", but we'll find it once we connect
  * to the first node, using the getsockname() function. Then we'll use this
  * address for all the next messages. */
+// 记录被选中的节点的名字
 typedef struct {
+    // 节点名字
     char nodename[CLUSTER_NAMELEN];
+    // 最后一次向该节点发送PING消息的时间错
     uint32_t ping_sent;
+    // 最后一次从该节点收到pong消息的时间戳
     uint32_t pong_received;
+    // 节点的IP地址
     char ip[NET_IP_STR_LEN];  /* IP address last time it was seen */
+    // 节点的端口号
     uint16_t port;              /* base port last time it was seen */
     uint16_t cport;             /* cluster port last time it was seen */
+    // 节点的标识值
     uint16_t flags;             /* node->flags copy */
     uint32_t notused1;
 } clusterMsgDataGossip;
 
+//　标记已经下线的主节点
 typedef struct {
     char nodename[CLUSTER_NAMELEN];
 } clusterMsgDataFail;
 
+// 向集群中广播消息
 typedef struct {
     uint32_t channel_len;
     uint32_t message_len;
@@ -252,18 +261,21 @@ typedef struct {
 } clusterMsgModule;
 
 union clusterMsgData {
-    /* PING, MEET and PONG */
+    /* PING, MEET and PONG 消息正文*/
     struct {
         /* Array of N clusterMsgDataGossip structures */
+        // 每条MEET,PING,PONG消息都包含两个clusterMsgDataGossip
         clusterMsgDataGossip gossip[1];
     } ping;
 
     /* FAIL */
+    // FAIL消息正文
     struct {
         clusterMsgDataFail about;
     } fail;
 
     /* PUBLISH */
+    // publish消息的正文
     struct {
         clusterMsgDataPublish msg;
     } publish;
@@ -281,28 +293,44 @@ union clusterMsgData {
 
 #define CLUSTER_PROTO_VER 1 /* Cluster bus protocol version. */
 
+//　消息头:　包含消息正文，记录消息发送者自身的信息
 typedef struct {
     char sig[4];        /* Signature "RCmb" (Redis Cluster message bus). */
+    // 消息的长度
     uint32_t totlen;    /* Total length of this message */
+    //
     uint16_t ver;       /* Protocol version, currently set to 1. */
+    // 发送者的端口号
     uint16_t port;      /* TCP base port number. */
+    // 消息类型
     uint16_t type;      /* Message type */
+    // 消息正文包含的节点信息数量，只在发送MEET,PING,PONG这三种Gossip协议消息时使用
     uint16_t count;     /* Only used for some kind of messages. */
+    // 发送者所处的配置纪元
     uint64_t currentEpoch;  /* The epoch accordingly to the sending node. */
+    // 如果发送者是一个主节点，记录的是发送者的配置纪元
+    // 发送者是一个从节点，记录发送者正在复制的住节点的配置纪元
     uint64_t configEpoch;   /* The config epoch if it's a master, or the last
                                epoch advertised by its master if it is a
                                slave. */
     uint64_t offset;    /* Master replication offset if node is a master or
                            processed replication offset if node is a slave. */
+    // 发送者的名字
     char sender[CLUSTER_NAMELEN]; /* Name of the sender node */
+    // 发送者目前的的槽指派信息
     unsigned char myslots[CLUSTER_SLOTS/8];
+    // 如果发送者是一个从节点,这里记录的是发送者正在复制的主节点的名字
+    // 发送这是一个主节点，这里记录的是REDIS_NODE_NULL_NAME
     char slaveof[CLUSTER_NAMELEN];
     char myip[NET_IP_STR_LEN];    /* Sender IP, if not all zeroed. */
     char notused1[34];  /* 34 bytes reserved for future usage. */
     uint16_t cport;      /* Sender TCP cluster bus port */
+    // 发送者标识值
     uint16_t flags;      /* Sender node flags */
+    // 发送者所处集群的状态
     unsigned char state; /* Cluster state from the POV of the sender */
     unsigned char mflags[3]; /* Message flags: CLUSTERMSG_FLAG[012]_... */
+    // 消息的正文
     union clusterMsgData data;
 } clusterMsg;
 
